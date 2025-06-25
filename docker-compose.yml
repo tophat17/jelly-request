@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  jelly-request:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jelly-request:latest
+    container_name: jelly-request
+    environment:
+      - JELLYSEERR_URL=http://192.168.0.29:5054
+      - API_KEY=MTY3MzkzMTU4MjI1NzNmZWQ4OGQ1LWQ1NDMtNDY0OC1hYzI3LWQ3ODAyMTM5OWUwNyk=
+      - IMDB_URL=https://www.imdb.com/chart/moviemeter
+      - MOVIE_LIMIT=80
+      - RUN_INTERVAL_DAYS=14
+      - DEBUG_MODE=VERBOSE
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - /mnt/user/appdata/jelly-request/logs:/logs
+    restart: unless-stopped
