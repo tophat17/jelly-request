@@ -14,6 +14,8 @@
 
 ## How to Install
 
+**For Unraid Users**
+
 Here’s how to get Jelly Request up and running on Unraid:
 
 1. Open the **Apps** tab in your Unraid dashboard.
@@ -26,6 +28,37 @@ Here’s how to get Jelly Request up and running on Unraid:
 6. Hit **Apply**, and you’re good to go!
 
 > **Pro Tip**: If your Jellyseerr is on the same Unraid server, you might use something like `http://localhost:5054` or your server’s IP. Just make sure Jelly Request can reach it!
+
+**For Docker Compose Users**
+
+If you're not using Unraid and want to set up Jelly Request using Docker Compose, follow these steps:
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/tophat17/jelly-request.git
+   cd jelly-request
+   ```
+
+2. **Edit the `docker-compose.yml` File**:
+   - Open `docker-compose.yml` in a text editor.
+   - Update the following environment variables:
+     - `JELLYSEERR_URL`: Your Jellyseerr instance URL (e.g., `http://192.168.0.29:5054`).
+     - `API_KEY`: Your Jellyseerr API key (from Jellyseerr settings).
+     - `MOVIE_LIMIT`: Number of movies to scrape (default: 50).
+     - `RUN_INTERVAL_DAYS`: How often to run (default: 7 days).
+     - `DEBUG_MODE`: Set to `SIMPLE` or `VERBOSE` (default: `SIMPLE`).
+
+3. **Run Docker Compose**:
+   ```bash
+   docker-compose up -d --build
+   ```
+
+4. **Check Logs**:
+   ```bash
+   docker logs jelly-request
+   ```
+
+> **Note**: Make sure your Docker host can access Jellyseerr and IMDb. Adjust volume mappings in `docker-compose.yml` if you want to store logs elsewhere.
 
 ---
 
