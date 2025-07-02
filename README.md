@@ -38,7 +38,7 @@ Here’s the step-by-step of what Jelly Request does behind the scenes:
 3. **Requests the good stuff**: Any movies not in your collection get added to your Jellyseerr requests.
 4. **Repeats on schedule**: It keeps this up quietly in the background, so your library stays fresh.
 
-![image](https://github.com/user-attachments/assets/db42d0ad-ebd1-49c6-babc-dcfe2a19b2a1)
+  ![image](https://github.com/user-attachments/assets/db42d0ad-ebd1-49c6-babc-dcfe2a19b2a1)
 
 ---
 
