@@ -1,68 +1,61 @@
-Jelly Request
-A Dockerized Python script that scrapes IMDb's Most Popular Movies chart and automatically requests them in Jellyseerr, keeping your media library up-to-date with trending content.
-What It Does
-"Jelly Request" solves the problem of manually curating your media library by automating the discovery and request process. It fetches trending movies from IMDb and integrates with Jellyseerr to request only those not already in your library, saving you time and effort.
-How It Works
+# Jelly Request
 
-Scraping: Uses Python to scrape movie titles from IMDb’s Most Popular Movies chart (https://www.imdb.com/chart/moviemeter).
-Integration: Queries your Jellyseerr instance via its API to check for existing movies and submits requests for missing ones.
-Scheduling: Runs on a configurable interval (e.g., weekly) inside a Docker container.
-Logging: Outputs detailed logs for monitoring and debugging.
+**Jelly Request** is a handy little app that keeps your media library fresh by automatically adding trending movies from IMDb to your Jellyseerr requests. No more hunting down what’s popular—it does the work for you, so you can kick back and enjoy your movies.
 
-Features
+---
 
-Automated IMDb scraping and Jellyseerr requests.
-Configurable movie limits and run intervals.
-Simple and verbose logging modes.
-Runs in Docker for easy deployment on Unraid.
+## What It Does
 
-Setup
+- **Finds trending movies**: Pulls a list of popular movies straight from IMDb.
+- **Adds them to Jellyseerr**: Requests movies you don’t already have in your library.
+- **Runs on its own**: Once you set it up, it keeps going without any extra effort from you.
 
-Prerequisites:
+---
 
-A running Jellyseerr instance.
-Docker and Docker Compose are installed on your Unraid server.
+## How to Install
 
+Here’s how to get Jelly Request up and running on Unraid:
 
-Clone the Repository:
-git clone https://github.com/tophat17/jelly-request.git
-cd jelly-request
+1. Open the **Apps** tab in your Unraid dashboard.
+2. Search for "Jelly Request" in the Community Apps store.
+3. Click **Install** to add it to your Docker containers.
+4. Fill in these two key settings:
+   - **Jellyseerr URL**: The address where your Jellyseerr is running (e.g., `http://192.168.0.29:5054`). You can find this by visiting Jellyseerr in your browser and copying the URL (minus any extra paths like `/settings`).
+   - **API Key**: Head to Jellyseerr > **Settings** > **General**, and copy the API key listed there. Paste it into the field.
+5. Leave the other settings alone—they come pre-configured with sensible defaults (like checking IMDb every week).
+6. Hit **Apply**, and you’re good to go!
 
+> **Pro Tip**: If your Jellyseerr is on the same Unraid server, you might use something like `http://localhost:5054` or your server’s IP. Just make sure Jelly Request can reach it!
 
-Configure Environment Variables: Edit docker-compose.yml to set:
+---
 
-JELLYSEERR_URL: Your Jellyseerr instance URL (e.g., http://192.168.0.29:5054).
-API_KEY: Your Jellyseerr API key (found in Jellyseerr settings).
-MOVIE_LIMIT: Number of movies to scrape (default: 50).
-RUN_INTERVAL_DAYS: Interval between runs in days (default: 7).
-DEBUG_MODE: Logging mode (SIMPLE or VERBOSE).
+## How It Works
 
+Here’s the step-by-step of what Jelly Request does behind the scenes:
 
-Deploy the Container:
-docker-compose up -d --build
+1. **Checks IMDb**: Every week (or your chosen interval), it grabs a list of trending movies from IMDb.
+2. **Compares to your library**: It talks to Jellyseerr to see which of those movies you’re missing.
+3. **Requests the good stuff**: Any movies not in your collection get added to your Jellyseerr requests.
+4. **Repeats on schedule**: It keeps this up quietly in the background, so your library stays fresh.
 
+---
 
-View Logs:
-docker logs jelly-request
+## If Something Goes Wrong
 
+Running into trouble? Here are the most common fixes:
 
+- **Movies aren’t showing up in Jellyseerr**:
+  - Double-check your **Jellyseerr URL**. Make sure it’s exact (e.g., no trailing slashes like `/` at the end unless needed).
+  - Verify your **API key**. Copy it fresh from Jellyseerr’s settings to rule out typos.
+- **App won’t start**:
+  - Ensure your Unraid server has internet access—Jelly Request needs to reach IMDb.
+  - Check that Jellyseerr is running and accessible at the URL you provided.
+- **Still stuck?** Peek at the logs:
+  - Go to the **Docker** tab in Unraid.
+  - Find "Jelly Request," click it, and select **Logs**.
+  - Look for error messages (like “connection failed” or “invalid key”) to get a clue.
+- **Need more help?** Head to the [GitHub page](https://github.com/tophat17/jelly-request) to ask a question.
 
-Configuration Options
+---
 
-JELLYSEERR_URL: URL of your Jellyseerr instance.
-API_KEY: Jellyseerr API key.
-IMDB_URL: IMDb chart URL (default: https://www.imdb.com/chart/moviemeter).
-MOVIE_LIMIT: Number of movies to scrape (default: 50).
-RUN_INTERVAL_DAYS: Interval between runs in days (default: 7).
-DEBUG_MODE: Logging mode (SIMPLE for minimal logs, VERBOSE for detailed logs).
-
-Troubleshooting
-
-Logs: Check /mnt/user/appdata/jelly-request/logs/imdb_jellyseerr.log for details.
-API Issues: Verify that your Jellyseerr URL and API key are correct.
-IMDb Scraping: Ensure the IMDb URL is accessible and unchanged.
-
-Contributing
-Contributions are welcome! Please open an issue or submit a pull request on GitHub.
-License
-This project is licensed under the MIT License.
+**License**: This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
