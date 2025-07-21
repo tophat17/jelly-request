@@ -1,6 +1,6 @@
 # Jelly Request
 
-**Jelly Request** keeps your media library up to date by automatically adding the top trending movies from IMDb to Jellyseerr. You don’t have to search for what’s popular—the app does it for you. Just relax and enjoy the latest movies.
+**Jelly Request** keeps your media library up to date by automatically adding the top trending movies from IMDb to Jellyseerr. You don’t have to search for what’s popular—the app does it for you.
 
 ---
 
