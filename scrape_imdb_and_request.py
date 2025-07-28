@@ -18,6 +18,7 @@ IMDB_URL = os.environ.get('IMDB_URL', 'https://www.imdb.com/chart/moviemeter')  
 MOVIE_LIMIT = int(os.environ.get('MOVIE_LIMIT', 50))  # Default to 50 if not set
 RUN_INTERVAL_DAYS = int(os.environ.get('RUN_INTERVAL_DAYS', 7))  # Default to every 7 days
 DEBUG_MODE = os.environ.get('DEBUG_MODE', 'SIMPLE').upper()  # Default to SIMPLE (SIMPLE or VERBOSE)
+IS_4K_REQUEST = os.environ.get('IS_4K_REQUEST', 'true').lower() == 'true'  # New 4K toggle
 LOG_FILE = "/logs/imdb_jellyseerr.log"  # Fixed path for container logs
 
 # Setup logging
@@ -189,7 +190,7 @@ def make_request(tmdb_id, media_id):
         "mediaType": "movie",
         "tmdbId": tmdb_id,
         "mediaId": media_id,
-        "is4k": True
+        "is4k": IS_4K_REQUEST
     }
     logger.debug(f"Making request for tmdbId: {tmdb_id}, mediaId: {media_id}, payload: {json.dumps(payload)}")
     try:
