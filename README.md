@@ -13,10 +13,8 @@ Here's the step-by-step of what Jelly Request does behind the scenes:
 
 ![App Running Screenshot](images/image-running-demo.png)
 
-*The app shows real-time progress as it processes each movie, finds matches, and successfully requests them in Jellyseerr.*
-
-![Untitled](https://github.com/user-attachments/assets/d8cc3468-a3a1-447a-8444-8f590e20d222)y automatically adding the top trending movies from IMDb to Jellyseerr. You don’t have to search for what’s popular—the app does it for you.
-
+*The app shows real-time progress as it processes each movie, finds matches, and successfully requests them in Jellyseerr.
+to-date by automatically adding the top trending movies from IMDb to Jellyseerr. You don't have to search for what's popular—the app does it for you.*
 ---
 
 ## What It Does
@@ -85,8 +83,6 @@ Here’s the step-by-step of what Jelly Request does behind the scenes:
 2. **Compares to your library**: It talks to Jellyseerr to see which of those movies you’re missing.
 3. **Requests the good stuff**: Any movies not in your collection get added to your Jellyseerr requests.
 4. **Repeats on schedule**: It keeps this up quietly in the background, so your library stays fresh.
-
-![Untitled](https://github.com/user-attachments/assets/d8cc3468-a3a1-447a-8444-8f590e20d222)
 
 ---
 
