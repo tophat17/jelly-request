@@ -19,7 +19,12 @@ def get_git_revision():
         pass
     
     # Fallback: try to read from environment variable if set during build
-    return os.environ.get('GIT_REVISION', 'unknown')
+    env_revision = os.environ.get('GIT_REVISION', 'unknown')
+    if env_revision != 'unknown':
+        return env_revision
+    
+    # Final fallback: try to get from image build time
+    return 'latest-build'
 
 def get_branch_name():
     """Get the current git branch name."""
@@ -33,6 +38,12 @@ def get_branch_name():
         pass
     
     # Fallback: try to read from environment variable if set during build
+    env_branch = os.environ.get('GIT_BRANCH', 'unknown')
+    if env_branch != 'unknown':
+        return env_branch
+    
+    # Final fallback: determine from repository tag
+    return 'main'
     return os.environ.get('GIT_BRANCH', 'unknown')
 
 def display_header():
