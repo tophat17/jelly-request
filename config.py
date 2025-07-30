@@ -10,6 +10,12 @@ import logging
 # === ENVIRONMENT VARIABLES ===
 JELLYSEERR_URL = os.environ.get('JELLYSEERR_URL', 'http://192.168.0.29:5054')
 API_KEY = os.environ.get('API_KEY', 'MTY3MzkzMTU4MjI1NzNmZWQ4OGQ1LWQ1NDMtNDY0OC1hYzI3LWQ3ODAyMTM5OWUwNyk=')
+# IMDB_URL supports any IMDb list URL:
+# - Most Popular: https://www.imdb.com/chart/moviemeter (default)
+# - Top 250: https://www.imdb.com/chart/top/
+# - French movies: https://www.imdb.com/search/title/?title_type=feature&primary_language=fr&sort=popularity,desc
+# - Indian movies: https://www.imdb.com/india/top-rated-indian-movies/
+# - Any custom IMDb search/list URL
 IMDB_URL = os.environ.get('IMDB_URL', 'https://www.imdb.com/chart/moviemeter')
 MOVIE_LIMIT = int(os.environ.get('MOVIE_LIMIT', 50))
 RUN_INTERVAL_DAYS = int(os.environ.get('RUN_INTERVAL_DAYS', 7))
