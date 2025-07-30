@@ -1,6 +1,21 @@
 # Jelly Request
 
-**Jelly Request** keeps your media library up to date by automatically adding the top trending movies from IMDb to Jellyseerr. You don’t have to search for what’s popular—the app does it for you.
+**Jelly Request** keeps your media library up## How It Works
+
+Here's the step-by-step of what Jelly Request does behind the scenes:
+
+1. **Checks IMDb**: Every week (or your chosen interval), it grabs a list of trending movies from IMDb.
+2. **Compares to your library**: It talks to Jellyseerr to see which of those movies you're missing.
+3. **Requests the good stuff**: Any movies not in your collection get added to your Jellyseerr requests.
+4. **Repeats on schedule**: It keeps this up quietly in the background, so your library stays fresh.
+
+**Here's what it looks like when running:**
+
+![App Running Screenshot](images/image-running-demo.png)
+
+*The app shows real-time progress as it processes each movie, finds matches, and successfully requests them in Jellyseerr.*
+
+![Untitled](https://github.com/user-attachments/assets/d8cc3468-a3a1-447a-8444-8f590e20d222)y automatically adding the top trending movies from IMDb to Jellyseerr. You don’t have to search for what’s popular—the app does it for you.
 
 ---
 
@@ -72,6 +87,29 @@ Here’s the step-by-step of what Jelly Request does behind the scenes:
 4. **Repeats on schedule**: It keeps this up quietly in the background, so your library stays fresh.
 
 ![Untitled](https://github.com/user-attachments/assets/d8cc3468-a3a1-447a-8444-8f590e20d222)
+
+---
+
+## Customizing Movie Lists
+
+**Want movies from different countries or genres?** You can customize the IMDb URL to scrape any list you want:
+
+### Popular Examples:
+- **French Movies**: `https://www.imdb.com/search/title/?title_type=feature&primary_language=fr&sort=popularity,desc`
+- **Indian Movies**: `https://www.imdb.com/india/top-rated-indian-movies/`
+- **Top 250 Movies**: `https://www.imdb.com/chart/top/`
+- **Horror Movies**: `https://www.imdb.com/search/title/?genres=horror&sort=popularity,desc`
+- **Movies from 2024**: `https://www.imdb.com/search/title/?release_date=2024&sort=popularity,desc`
+
+### How to Change:
+1. **In Unraid**: Edit your container and change the **IMDb URL** field
+2. **In Docker Compose**: Update the `IMDB_URL` environment variable
+
+### Finding More Lists:
+1. Go to [IMDb.com](https://www.imdb.com) 
+2. Browse to any movie list or use the advanced search
+3. Copy the URL and paste it into your Jelly Request configuration
+4. The app will automatically scrape whatever list you provide!
 
 ---
 
