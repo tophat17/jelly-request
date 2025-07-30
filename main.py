@@ -7,9 +7,13 @@ import time
 from config import RUN_INTERVAL_DAYS, logger
 from imdb_scraper import scrape_imdb_top_movies
 from jellyseerr_client import JellyseerrClient
+from header import display_header
 
 def main():
     """Main application loop."""
+    # Display application header
+    display_header()
+    
     logger.info(f"Starting IMDb to Jellyseerr sync, configured to run every {RUN_INTERVAL_DAYS} day(s)")
     print(f"Configured to run every {RUN_INTERVAL_DAYS} day(s)")
     
