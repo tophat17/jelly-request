@@ -1,6 +1,10 @@
 # Jelly Request
 
-**Jelly Request** keeps your media library up## How It Works
+**Jelly Request** keeps your media library up-to-date by automatically adding the top trending movies from IMDb to Jellyseerr. You don't have to search for what's popular—the app does it for you.
+
+---
+
+## How It Works
 
 Here's the step-by-step of what Jelly Request does behind the scenes:
 
@@ -13,8 +17,8 @@ Here's the step-by-step of what Jelly Request does behind the scenes:
 
 ![App Running Screenshot](images/image-running-demo.png)
 
-*The app shows real-time progress as it processes each movie, finds matches, and successfully requests them in Jellyseerr.
-to-date by automatically adding the top trending movies from IMDb to Jellyseerr. You don't have to search for what's popular—the app does it for you.*
+*The app shows real-time progress as it processes each movie, finds matches, and successfully requests them in Jellyseerr.*
+
 ---
 
 ## What It Does
