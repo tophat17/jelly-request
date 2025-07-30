@@ -7,7 +7,7 @@ import requests
 import json
 from bs4 import BeautifulSoup
 from config import IMDB_URL, MOVIE_LIMIT, logger
-from utils import normalize_title
+from utils import normalize_title, decode_html_entities
 
 def scrape_imdb_top_movies(limit=MOVIE_LIMIT):
     """
@@ -63,6 +63,8 @@ def _extract_from_json_ld(soup, limit):
             for item in json_data["itemListElement"]:
                 title = item.get("item", {}).get("name")
                 if title:
+                    # Decode HTML entities like &amp; to &
+                    title = decode_html_entities(title)
                     norm_title = normalize_title(title)
                     if norm_title and norm_title not in seen_titles:
                         movies.append(title)
@@ -95,6 +97,8 @@ def _extract_from_html(soup, limit):
     for element in movie_elements:
         title = element.get_text().strip().split(". ")[-1]
         if title:
+            # Decode HTML entities like &amp; to &
+            title = decode_html_entities(title)
             norm_title = normalize_title(title)
             if norm_title and norm_title not in seen_titles:
                 movies.append(title)

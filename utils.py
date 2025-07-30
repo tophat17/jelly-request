@@ -4,14 +4,23 @@ Contains common helpers, HTTP session management, and retry logic.
 """
 
 import re
+import html
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+def decode_html_entities(text):
+    """Decode HTML entities like &amp; to & and &quot; to "."""
+    if not text:
+        return text
+    return html.unescape(text)
 
 def normalize_title(title):
     """Normalize titles by removing special characters, spaces, and numbers."""
     if not title:
         return ""
+    # First decode HTML entities
+    title = decode_html_entities(title)
     # Remove special characters, keep letters and numbers
     title = re.sub(r'[^\w\s]', '', title.lower())
     # Remove extra spaces

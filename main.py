@@ -94,7 +94,7 @@ def process_movies(jellyseerr_client, movies):
             
             if should_skip:
                 # Categorize skip reason for stats
-                status = skip_details.get("status", "").upper()
+                status = str(skip_details.get("status", "")).upper()
                 if status == "AVAILABLE":
                     stats["skipped_available"] += 1
                 elif status == "APPROVED":
@@ -147,7 +147,7 @@ def _log_skip_reason(movie, skip_reason, skip_details):
         skip_reason (str): Reason for skipping
         skip_details (dict): Additional details about the skip
     """
-    status = skip_details.get("status", "").upper()
+    status = str(skip_details.get("status", "")).upper()
     
     if status == "AVAILABLE":
         added_date = skip_details.get("added_date", "")

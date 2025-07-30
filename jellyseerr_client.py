@@ -8,7 +8,7 @@ import json
 import time
 from datetime import datetime
 from config import JELLYSEERR_URL, API_KEY, IS_4K_REQUEST, DEBUG_MODE, logger
-from utils import normalize_title, create_session_with_retries
+from utils import normalize_title, create_session_with_retries, decode_html_entities
 
 class JellyseerrClient:
     """Client for interacting with Jellyseerr API."""
@@ -99,6 +99,8 @@ class JellyseerrClient:
         for result in json_data["results"]:
             if result.get("mediaType") == "movie":
                 title = result.get("title", "")
+                # Decode HTML entities like &amp; to &
+                title = decode_html_entities(title)
                 normalized_title = normalize_title(title)
                 imdb_id = result.get("mediaInfo", {}).get("imdbId") or result.get("imdbId")
                 media_id = result.get("id")
@@ -182,7 +184,7 @@ class JellyseerrClient:
                     # Fetch a large number of requests to ensure we get all of them
                     res = session.get(
                         f"{self.base_url}/api/v1/request",
-                        params={"take": 1000, "sort": "added", "order": "desc"},
+                        params={"take": 1000},
                         headers=self.headers,
                         timeout=(5, 15)
                     )
@@ -222,15 +224,20 @@ class JellyseerrClient:
         self.skip_list = {}
         skip_count = 0
         
-        for request in self.existing_requests:
+        logger.debug(f"Processing {len(self.existing_requests)} existing requests for skip list")
+        
+        for i, request in enumerate(self.existing_requests):
+            if i < 3:  # Log first 3 requests for debugging
+                logger.debug(f"Request {i+1} structure: {request}")
+            
             media = request.get("media", {})
             tmdb_id = media.get("tmdbId")
             imdb_id = media.get("imdbId")
             title = media.get("title", "Unknown")
-            status = request.get("status", "unknown").upper()
+            status = request.get("status", "unknown")
             
             # Only skip requests that are not failed or declined
-            if status not in ["DECLINED", "FAILED"]:
+            if status not in ["DECLINED", "FAILED", 3]:  # Status 3 = declined
                 if tmdb_id:
                     self.skip_list[f"tmdb_{tmdb_id}"] = {
                         "reason": f"Already requested (Status: {status})",
@@ -252,7 +259,6 @@ class JellyseerrClient:
                         "is_4k": request.get("is4k", False)
                     }
         
-        print("Building skip list for duplicate prevention...")
         print(f"✅ Skip list built: {skip_count} movies to skip (requested/available)")
         logger.info(f"Built skip list with {skip_count} movies to prevent duplicates")
     
@@ -270,8 +276,9 @@ class JellyseerrClient:
         for attempt in range(1, max_retries + 1):
             try:
                 with create_session_with_retries() as session:
+                    url = f"{self.base_url}/api/v1/movie/{tmdb_id}"
                     res = session.get(
-                        f"{self.base_url}/api/v1/movie/{tmdb_id}",
+                        url,
                         headers=self.headers,
                         timeout=(5, 15)
                     )
@@ -279,8 +286,9 @@ class JellyseerrClient:
                     if res.status_code == 200:
                         data = res.json()
                         media_info = data.get("mediaInfo", {})
+                        status = media_info.get("status")
                         
-                        if media_info.get("status") == 5:  # Status 5 = Available
+                        if status == 5:  # Status 5 = Available
                             return {
                                 "available": True,
                                 "status": "AVAILABLE",
@@ -317,7 +325,7 @@ class JellyseerrClient:
             return True, details["reason"], details
         
         # Method 2: Check skip list by IMDb ID (backup)
-        if imdb_id:
+        if imdb_id and isinstance(imdb_id, str):
             imdb_key = f"imdb_{imdb_id}"
             if imdb_key in self.skip_list:
                 details = self.skip_list[imdb_key]
