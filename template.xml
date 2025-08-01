@@ -23,11 +23,10 @@
   <Requires>A running Jellyseerr instance (see https://jellyseerr.dev/ for setup instructions)</Requires>
   <Config Name="Jellyseerr URL" Target="JELLYSEERR_URL" Default="http://192.168.0.29:5054" Mode="" Description="URL of your Jellyseerr instance (e.g., http://192.168.0.29:5054)" Type="Variable" />
   <Config Name="API Key" Target="API_KEY" Default="" Mode="" Description="Jellyseerr API key (found in Jellyseerr settings)" Type="Variable" />
-  <Config Name="IMDb URL" Target="IMDB_URL" Default="https://www.imdb.com/chart/moviemeter" Mode="" Description="IMDb chart URL to scrape. Default: Most Popular Movies. For other languages/regions, use URLs like: French movies: https://www.imdb.com/search/title/?title_type=feature&primary_language=fr&sort=popularity,desc | Indian movies: https://www.imdb.com/india/top-rated-indian-movies/ | Top 250: https://www.imdb.com/chart/top/ | Any valid IMDb list URL works!" Type="Variable" />
+  <Config Name="IMDb URL" Target="IMDB_URL" Default="https://www.imdb.com/chart/moviemeter" Mode="" Description="IMDb chart URL to scrape. Default: Most Popular Movies. For other languages/regions, use URLs like: French movies: https://www.imdb.com/search/title/?title_type=feature&amp;primary_language=fr&amp;sort=popularity,desc | Indian movies: https://www.imdb.com/india/top-rated-indian-movies/ | Top 250: https://www.imdb.com/chart/top/ | Any valid IMDb list URL works!" Type="Variable" />
   <Config Name="Movie Limit" Target="MOVIE_LIMIT" Default="50" Mode="" Description="Number of movies to scrape from IMDb (default: 50)" Type="Variable" />
   <Config Name="Run Interval (Days)" Target="RUN_INTERVAL_DAYS" Default="7" Mode="" Description="Interval between runs in days (default: 7)" Type="Variable" />
   <Config Name="Enable 4K Requests" Target="IS_4K_REQUEST" Default="true" Mode="" Description="Enable 4K quality requests in Jellyseerr. Set to 'true' for 4K or 'false' for standard quality (default: true)" Type="Variable" />
   <Config Name="Debug Mode" Target="DEBUG_MODE" Default="SIMPLE" Mode="" Description="Logging mode: SIMPLE for minimal logs, VERBOSE for detailed logs (default: SIMPLE)" Type="Variable" />
-  <Config Name="Python Unbuffered" Target="PYTHONUNBUFFERED" Default="1" Mode="" Description="Set to 1 to enable unbuffered Python output (default: 1)" Type="Variable" />
   <Config Name="Log Path" Target="/logs" Default="/mnt/user/appdata/jelly-request/logs" Mode="rw" Description="Path to store log files on the host" Type="Path" />
 </Container>
