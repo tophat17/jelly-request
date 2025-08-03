@@ -1,2 +1,3 @@
-Add support for multiple lists - Allowing multiple lists to be queued at once. 
-Rating system filter - Adding a system to allow users to set the minimal number of stars the movie must have to be added to the Jellyseerr.
+Add support for multiple lists, allowing various lists to be queued at once. 
+Rating system filter - Adding a system to allow users to set the minimum number of stars a movie must have to be added to Jellyseerr.
+Make it so users can download TV shows.
