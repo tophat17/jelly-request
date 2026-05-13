@@ -3,7 +3,7 @@ IMDb scraping functionality for Jelly Request application.
 Handles web scraping of IMDb's most popular movies chart.
 """
 
-import requests
+import cloudscraper
 import json
 from bs4 import BeautifulSoup
 from config import IMDB_URL, MOVIE_LIMIT, logger
@@ -12,22 +12,20 @@ from utils import normalize_title, decode_html_entities
 def scrape_imdb_top_movies(limit=MOVIE_LIMIT):
     """
     Scrape top movies from IMDb's most popular movies chart.
-    
+
     Args:
         limit (int): Maximum number of movies to scrape
-        
+
     Returns:
         list: List of movie titles
     """
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
-        }
-        response = requests.get(IMDB_URL, headers=headers, timeout=(5, 10))
+        scraper = cloudscraper.create_scraper(browser={"browser": "chrome", "platform": "windows", "mobile": False})
+        response = scraper.get(IMDB_URL, timeout=(5, 30))
         logger.debug(f"IMDb response status: {response.status_code}")
         logger.debug(f"IMDb response snippet: {response.text[:500]}")
         print(f"IMDb response status: {response.status_code}")
-        
+
         if response.status_code != 200:
             logger.error(f"Failed to fetch IMDb chart: {response.status_code}")
             print(f"❌ Failed to fetch IMDb chart: {response.status_code}")
