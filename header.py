@@ -7,6 +7,8 @@ import os
 import subprocess
 from datetime import datetime
 
+from config import APP_VERSION
+
 def get_git_revision():
     """Get the current git revision/commit hash."""
     try:
@@ -57,6 +59,7 @@ def display_header():
 ║                              JELLY REQUEST                                   ║
 ║                        IMDb to Jellyseerr Sync Tool                          ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
+║ Version:           {APP_VERSION:<50} ║
 ║ Container Started: {start_time:<50} ║
 ║ App Revision:      {revision:<50} ║
 ║ Branch:            {branch:<50} ║

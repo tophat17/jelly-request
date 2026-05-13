@@ -1,9 +1,12 @@
 FROM python:3.11-slim
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Copy requirements and install Python dependencies, then install Chromium
+# along with the system libraries Playwright needs to run it headlessly.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    playwright install --with-deps chromium && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create logs directory
 RUN mkdir /logs

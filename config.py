@@ -7,6 +7,10 @@ import os
 import sys
 import logging
 
+# === APP VERSION ===
+# Bump on every release so the running container can be identified at a glance.
+APP_VERSION = "1.2.0"
+
 # === ENVIRONMENT VARIABLES ===
 JELLYSEERR_URL = os.environ.get('JELLYSEERR_URL', 'http://192.168.0.29:5054')
 API_KEY = os.environ.get('API_KEY', 'MTY3MzkzMTU4MjI1NzNmZWQ4OGQ1LWQ1NDMtNDY0OC1hYzI3LWQ3ODAyMTM5OWUwNyk=')

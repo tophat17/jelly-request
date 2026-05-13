@@ -1,13 +1,56 @@
 """
 IMDb scraping functionality for Jelly Request application.
 Handles web scraping of IMDb's most popular movies chart.
+
+IMDb is fronted by AWS WAF, which serves a JavaScript challenge that has
+to be executed before the real HTML is returned. We render the page in
+headless Chromium via Playwright so the challenge resolves naturally,
+then hand the rendered HTML to BeautifulSoup for parsing.
 """
 
-import cloudscraper
 import json
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from config import IMDB_URL, MOVIE_LIMIT, logger
 from utils import normalize_title, decode_html_entities
+
+# Spoof a recent real Chrome on Windows. Playwright's default user agent
+# advertises "HeadlessChrome" which AWS WAF treats as suspicious.
+_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/128.0.0.0 Safari/537.36"
+)
+
+# Selector for the chart rows on imdb.com — wait for this so we know the
+# WAF challenge has resolved and the real page is rendered.
+_CHART_SELECTOR = "ul.ipc-metadata-list li.ipc-metadata-list-summary-item"
+
+def _fetch_rendered_html(url, nav_timeout_ms=45000, content_timeout_ms=20000):
+    """
+    Render `url` in headless Chromium and return the final HTML string.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            args=["--no-sandbox", "--disable-dev-shm-usage"],
+        )
+        try:
+            context = browser.new_context(
+                user_agent=_USER_AGENT,
+                viewport={"width": 1366, "height": 768},
+                locale="en-US",
+            )
+            page = context.new_page()
+            page.goto(url, wait_until="domcontentloaded", timeout=nav_timeout_ms)
+
+            try:
+                page.wait_for_selector(_CHART_SELECTOR, timeout=content_timeout_ms)
+            except PlaywrightTimeoutError:
+                logger.debug("Chart selector did not appear within timeout; parsing whatever was rendered")
+
+            return page.content()
+        finally:
+            browser.close()
 
 def scrape_imdb_top_movies(limit=MOVIE_LIMIT):
     """
@@ -20,27 +63,20 @@ def scrape_imdb_top_movies(limit=MOVIE_LIMIT):
         list: List of movie titles
     """
     try:
-        scraper = cloudscraper.create_scraper(browser={"browser": "chrome", "platform": "windows", "mobile": False})
-        response = scraper.get(IMDB_URL, timeout=(5, 30))
-        logger.debug(f"IMDb response status: {response.status_code}")
-        logger.debug(f"IMDb response snippet: {response.text[:500]}")
-        print(f"IMDb response status: {response.status_code}")
+        html = _fetch_rendered_html(IMDB_URL)
+        logger.debug(f"IMDb rendered HTML length: {len(html)}")
+        logger.debug(f"IMDb HTML snippet: {html[:500]}")
 
-        if response.status_code != 200:
-            logger.error(f"Failed to fetch IMDb chart: {response.status_code}")
-            print(f"❌ Failed to fetch IMDb chart: {response.status_code}")
-            return []
+        soup = BeautifulSoup(html, "html.parser")
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        
         # Try JSON-LD structured data first
         movies = _extract_from_json_ld(soup, limit)
         if movies:
             return movies
-            
+
         # Fallback to HTML scraping
         return _extract_from_html(soup, limit)
-        
+
     except Exception as e:
         logger.error(f"Error scraping IMDb: {e}")
         print(f"❌ Error scraping IMDb: {e}")
@@ -51,12 +87,12 @@ def _extract_from_json_ld(soup, limit):
     json_ld = soup.find("script", type="application/ld+json")
     if not json_ld:
         return []
-        
+
     try:
         json_data = json.loads(json_ld.string)
         movies = []
         seen_titles = set()
-        
+
         if "itemListElement" in json_data:
             for item in json_data["itemListElement"]:
                 title = item.get("item", {}).get("name")
@@ -69,13 +105,13 @@ def _extract_from_json_ld(soup, limit):
                         seen_titles.add(norm_title)
                 if len(movies) >= limit:
                     break
-                    
+
             logger.info(f"Scraped {len(movies)} unique movies from JSON-LD: {movies}")
             print(f"Scraped {len(movies)} unique movies from JSON-LD: {movies}")
             return movies
     except (json.JSONDecodeError, KeyError) as e:
         logger.debug(f"Failed to parse JSON-LD data: {e}")
-        
+
     return []
 
 def _extract_from_html(soup, limit):
@@ -83,13 +119,13 @@ def _extract_from_html(soup, limit):
     movie_elements = soup.select("ul.ipc-metadata-list li.ipc-metadata-list-summary-item a h3")
     logger.debug(f"Found {len(movie_elements)} movie elements before slicing")
     print(f"Found {len(movie_elements)} movie elements before slicing")
-    
+
     movie_elements = movie_elements[:limit]
     if not movie_elements:
         logger.error("No movie elements found with selector")
         print(f"❌ No movie elements found with selector")
         return []
-    
+
     movies = []
     seen_titles = set()
     for element in movie_elements:
@@ -103,7 +139,7 @@ def _extract_from_html(soup, limit):
                 seen_titles.add(norm_title)
         if len(movies) >= limit:
             break
-            
+
     logger.info(f"Scraped {len(movies)} unique movies from HTML: {movies}")
     print(f"Scraped {len(movies)} unique movies from HTML: {movies}")
     return movies
