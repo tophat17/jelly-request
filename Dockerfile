@@ -1,12 +1,10 @@
 FROM python:3.11-slim
 WORKDIR /app
 
-# Copy requirements and install Python dependencies, then install Chromium
-# along with the system libraries Playwright needs to run it headlessly.
+# Copy requirements and install Python dependencies. IMDb data comes from its
+# JSON API, so no browser or scraping stack is needed.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
-    playwright install --with-deps chromium && \
-    rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Create logs directory
 RUN mkdir /logs

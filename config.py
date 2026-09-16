@@ -9,7 +9,7 @@ import logging
 
 # === APP VERSION ===
 # Bump on every release so the running container can be identified at a glance.
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 
 # === ENVIRONMENT VARIABLES ===
 JELLYSEERR_URL = os.environ.get('JELLYSEERR_URL', 'http://192.168.0.29:5054')
@@ -25,7 +25,7 @@ MOVIE_LIMIT = int(os.environ.get('MOVIE_LIMIT', 50))
 RUN_INTERVAL_DAYS = int(os.environ.get('RUN_INTERVAL_DAYS', 7))
 DEBUG_MODE = os.environ.get('DEBUG_MODE', 'SIMPLE').upper()
 IS_4K_REQUEST = os.environ.get('IS_4K_REQUEST', 'true').lower() == 'true'
-LOG_FILE = "/logs/imdb_jellyseerr.log"
+LOG_FILE = os.environ.get('LOG_FILE', '/logs/imdb_jellyseerr.log')
 
 # === LOGGING SETUP ===
 def setup_logging():
@@ -38,10 +38,14 @@ def setup_logging():
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    # File handler
-    file_handler = logging.FileHandler(LOG_FILE)
-    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    logger.addHandler(file_handler)
+    # File handler. Fall back to console-only logging if the log directory
+    # is not writable, so a bad mount cannot stop the app from running.
+    try:
+        file_handler = logging.FileHandler(LOG_FILE)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+        logger.addHandler(file_handler)
+    except OSError as e:
+        print(f"Could not open log file {LOG_FILE} ({e}); logging to console only")
 
     # Console handler to duplicate logs to stdout
     console_handler = logging.StreamHandler(sys.stdout)

@@ -92,14 +92,29 @@ Here’s the step-by-step of what Jelly Request does behind the scenes:
 
 ## Customizing Movie Lists
 
-**Want movies from different countries or genres?** You can customize the IMDb URL to scrape any list you want:
+**Want movies from different countries or genres?** You can customize the IMDb URL to pull any list you want:
 
 ### Popular Examples:
-- **French Movies**: `https://www.imdb.com/search/title/?title_type=feature&primary_language=fr&sort=popularity,desc`
-- **Indian Movies**: `https://www.imdb.com/india/top-rated-indian-movies/`
+- **Most Popular Movies** (default): `https://www.imdb.com/chart/moviemeter`
 - **Top 250 Movies**: `https://www.imdb.com/chart/top/`
-- **Horror Movies**: `https://www.imdb.com/search/title/?genres=horror&sort=popularity,desc`
-- **Movies from 2024**: `https://www.imdb.com/search/title/?release_date=2024&sort=popularity,desc`
+- **Indian Movies**: `https://www.imdb.com/india/top-rated-indian-movies/`
+- **French Movies**: `https://www.imdb.com/search/title/?title_type=feature&primary_language=fr&sort=popularity,asc`
+- **Horror Movies**: `https://www.imdb.com/search/title/?genres=horror&sort=popularity,asc`
+- **Movies from 2024**: `https://www.imdb.com/search/title/?release_date=2024&sort=popularity,asc`
+- **Well-rated recent sci-fi**: `https://www.imdb.com/search/title/?genres=sci-fi&user_rating=7.0,&num_votes=50000,&release_date=2020-01-01,&sort=user_rating,desc`
+- **A public IMDb list**: `https://www.imdb.com/list/ls002448041/`
+
+> **Heads up on sorting**: IMDb ranks popularity *ascending*, so `sort=popularity,asc` gives you the **most** popular titles. `sort=popularity,desc` gives you the least popular ones — the app warns you in the logs if you use it.
+
+### Supported URL Types:
+| URL shape | What it reads |
+| --- | --- |
+| `https://www.imdb.com/chart/<name>` | Built-in charts: `moviemeter`, `top`, `top-english-movies`, `bottom`, `tvmeter`, `toptv` |
+| `https://www.imdb.com/india/top-rated-<language>-movies/` | Indian, Malayalam, Tamil and Telugu top-rated charts |
+| `https://www.imdb.com/list/ls<id>/` | Any public IMDb user list |
+| `https://www.imdb.com/search/title/?<filters>` | Advanced search: `title_type`, `genres`, `primary_language`, `countries`, `release_date`, `year`, `user_rating`, `num_votes`, `keywords`, `sort` |
+
+Search URLs with no `title_type` default to feature films, since Jellyseerr requests here are for movies.
 
 ### How to Change:
 1. **In Unraid**: Edit your container and change the **IMDb URL** field
@@ -107,9 +122,9 @@ Here’s the step-by-step of what Jelly Request does behind the scenes:
 
 ### Finding More Lists:
 1. Go to [IMDb.com](https://www.imdb.com) 
-2. Browse to any movie list or use the advanced search
+2. Browse to any chart, public list, or use the advanced search
 3. Copy the URL and paste it into your Jelly Request configuration
-4. The app will automatically scrape whatever list you provide!
+4. The app translates the URL into the matching IMDb API query for you
 
 ---
 
@@ -123,6 +138,10 @@ Running into trouble? Here are the most common fixes:
 - **App won’t start**:
   - Ensure your Unraid server has internet access—Jelly Request needs to reach IMDb.
   - Check that Jellyseerr is running and accessible at the URL you provided.
+- **“No movies found” or “Human Verification” in the logs**:
+  - This was IMDb's bot protection blocking the old HTML scraper. Version 1.3.0 reads IMDb's JSON API instead and is no longer affected—update to the latest image.
+- **“Unsupported IMDB_URL” in the logs**:
+  - The URL isn't a chart, public list, or advanced search. See [Supported URL Types](#supported-url-types) above.
 - **Still stuck?** Peek at the logs:
   - Go to the **Docker** tab in Unraid.
   - Find "Jelly Request," click it, and select **Logs**.
