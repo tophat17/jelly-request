@@ -5,7 +5,7 @@ Shows container start time and app revision information.
 
 import os
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 
 from config import APP_VERSION
 
@@ -50,7 +50,8 @@ def get_branch_name():
 
 def display_header():
     """Display the application header with start time and revision info."""
-    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+    # datetime.now() is local time; the label says UTC, so ask for UTC.
+    start_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     revision = get_git_revision()
     branch = get_branch_name()
     
