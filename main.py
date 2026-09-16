@@ -4,8 +4,8 @@ Orchestrates the IMDb scraping and Jellyseerr requesting process.
 """
 
 import time
-from config import RUN_INTERVAL_DAYS, logger
-from imdb_scraper import scrape_imdb_top_movies
+from config import RUN_INTERVAL_DAYS, DRY_RUN, logger
+from imdb_scraper import fetch_imdb_titles
 from jellyseerr_client import JellyseerrClient
 from header import display_header
 
@@ -16,23 +16,27 @@ def main():
     
     logger.info(f"Starting IMDb to Jellyseerr sync, configured to run every {RUN_INTERVAL_DAYS} day(s)")
     print(f"Configured to run every {RUN_INTERVAL_DAYS} day(s)")
+
+    if DRY_RUN:
+        logger.info("DRY_RUN is on; no requests will be created")
+        print("🧪 DRY RUN: matching everything but creating no requests")
     
     # Initialize Jellyseerr client
     jellyseerr = JellyseerrClient()
     
     while True:
         try:
-            print("\nScraping IMDb's Top Movies of the Week...")
-            top_movies = scrape_imdb_top_movies()
-            
+            print("\nFetching IMDb's Top Movies of the Week...")
+            top_movies = fetch_imdb_titles()
+
             if not top_movies:
                 logger.error("No movies found from IMDb")
                 print("❌ No movies found.")
             else:
-                logger.info(f"Scraped {len(top_movies)} unique movies")
+                logger.info(f"Fetched {len(top_movies)} unique movies")
                 print(f"✅ Top Movies of the Week (Total: {len(top_movies)}):")
                 for i, movie in enumerate(top_movies, 1):
-                    print(f"{i}. {movie}")
+                    print(f"{i}. {movie['title']} ({movie['year']})")
 
                 process_movies(jellyseerr, top_movies)
                 
@@ -50,7 +54,7 @@ def process_movies(jellyseerr_client, movies):
     
     Args:
         jellyseerr_client (JellyseerrClient): Initialized Jellyseerr client
-        movies (list): List of movie titles to process
+        movies (list): IMDb entries (title, year, imdb_id) to process
     """
     # Initialize counters for summary
     stats = {
@@ -62,6 +66,7 @@ def process_movies(jellyseerr_client, movies):
         "skipped_pending": 0,
         "skipped_declined": 0,
         "not_found": 0,
+        "would_request": 0,
         "errors": 0
     }
     
@@ -71,16 +76,17 @@ def process_movies(jellyseerr_client, movies):
     print("\nRequesting movies in Jellyseerr...")
     
     for i, movie in enumerate(movies, 1):
-        print(f"\nProcessing '{movie}' ({i}/{len(movies)})...")
+        title = movie["title"]
+        print(f"\nProcessing '{title}' ({movie['year']}) ({i}/{len(movies)})...")
         try:
             # Search for the movie in Jellyseerr
-            json_data = jellyseerr_client.search_movie(movie)
+            json_data = jellyseerr_client.search_movie(title)
             if not json_data:
                 stats["not_found"] += 1
                 print(f"❌ SKIPPED: Not found in Jellyseerr search results")
                 continue
-                
-            # Extract movie details from search results
+
+            # Pick the best match using the IMDb year and id as tiebreakers
             imdb_id, media_id, tmdb_id = jellyseerr_client.get_movie_details(movie, json_data)
             if not media_id:
                 stats["not_found"] += 1
@@ -89,7 +95,7 @@ def process_movies(jellyseerr_client, movies):
             
             # Check if already requested or available
             should_skip, skip_reason, skip_details = jellyseerr_client.is_already_requested_or_available(
-                tmdb_id, imdb_id, movie
+                tmdb_id, imdb_id, title
             )
             
             if should_skip:
@@ -109,10 +115,15 @@ def process_movies(jellyseerr_client, movies):
                     stats["skipped_requested"] += 1  # Default to requested
                 
                 # Enhanced logging with detailed skip reason
-                _log_skip_reason(movie, skip_reason, skip_details)
+                _log_skip_reason(title, skip_reason, skip_details)
                 continue
             
             # Movie is new - make the request
+            if DRY_RUN:
+                stats["would_request"] += 1
+                print(f"🧪 WOULD REQUEST: New movie not in system (tmdbId: {tmdb_id})")
+                continue
+
             print(f"🎬 REQUESTING: New movie not in system")
             success, msg = jellyseerr_client.make_request(tmdb_id, media_id)
             
@@ -122,7 +133,7 @@ def process_movies(jellyseerr_client, movies):
             else:
                 stats["errors"] += 1
                 if "Request for this media already exists" not in msg:
-                    logger.error(f"Failed to request '{movie}': {msg}")
+                    logger.error(f"Failed to request '{title}': {msg}")
                     print(f"❌ FAILED: Could not request movie - {msg}")
                 else:
                     # This is a race condition where movie was requested between our check and request
@@ -131,7 +142,7 @@ def process_movies(jellyseerr_client, movies):
                 
         except Exception as e:
             stats["errors"] += 1
-            logger.error(f"Error processing movie '{movie}': {e}")
+            logger.error(f"Error processing movie '{movie.get('title', movie)}': {e}")
             print(f"❌ ERROR: Processing failed - {e}")
             continue
     
@@ -189,7 +200,7 @@ def _print_summary(stats):
         stats (dict): Statistics from processing
     """
     total = stats["total"]
-    new_requests = stats["new_requests"]
+    new_requests = stats["would_request"] if DRY_RUN else stats["new_requests"]
     total_skipped = (stats["skipped_requested"] + stats["skipped_available"] + 
                     stats["skipped_processing"] + stats["skipped_pending"] + 
                     stats["skipped_declined"])
@@ -198,7 +209,10 @@ def _print_summary(stats):
     print("SUMMARY")
     print(f"{'='*40}")
     print(f"📊 Total movies processed: {total}")
-    print(f"✅ New requests made: {new_requests}")
+    if DRY_RUN:
+        print(f"🧪 Would have requested: {stats['would_request']}")
+    else:
+        print(f"✅ New requests made: {new_requests}")
     
     if stats["skipped_requested"] > 0:
         print(f"⏭️ Skipped (already requested): {stats['skipped_requested']}")

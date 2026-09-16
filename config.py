@@ -9,7 +9,7 @@ import logging
 
 # === APP VERSION ===
 # Bump on every release so the running container can be identified at a glance.
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 
 # === ENVIRONMENT VARIABLES ===
 JELLYSEERR_URL = os.environ.get('JELLYSEERR_URL', 'http://192.168.0.29:5054')
@@ -25,6 +25,9 @@ MOVIE_LIMIT = int(os.environ.get('MOVIE_LIMIT', 50))
 RUN_INTERVAL_DAYS = int(os.environ.get('RUN_INTERVAL_DAYS', 7))
 DEBUG_MODE = os.environ.get('DEBUG_MODE', 'SIMPLE').upper()
 IS_4K_REQUEST = os.environ.get('IS_4K_REQUEST', 'true').lower() == 'true'
+# DRY_RUN walks the whole pipeline but stops short of creating requests,
+# so a configuration can be checked without changing the library.
+DRY_RUN = os.environ.get('DRY_RUN', 'false').lower() == 'true'
 LOG_FILE = os.environ.get('LOG_FILE', '/logs/imdb_jellyseerr.log')
 
 # === LOGGING SETUP ===

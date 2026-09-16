@@ -13,6 +13,8 @@ services:
       - MOVIE_LIMIT=80
       - RUN_INTERVAL_DAYS=14
       - DEBUG_MODE=VERBOSE
+      # Set to true to match everything without creating any requests
+      - DRY_RUN=false
       - PYTHONUNBUFFERED=1
     volumes:
       - /mnt/user/appdata/jelly-request/logs:/logs

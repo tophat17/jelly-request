@@ -499,16 +499,17 @@ def _fetch_titles(url, limit):
     return []
 
 
-def scrape_imdb_top_movies(limit=MOVIE_LIMIT, url=IMDB_URL):
+def fetch_imdb_titles(limit=MOVIE_LIMIT, url=IMDB_URL):
     """
-    Fetch top movie titles from the configured IMDb list.
+    Fetch entries from the configured IMDb list, de-duplicated by title.
 
     Args:
-        limit (int): Maximum number of movies to return
+        limit (int): Maximum number of entries to return
         url (str): IMDb chart/list/search URL to read
 
     Returns:
-        list: List of movie titles
+        list: Dicts with title, imdb_id, year, title_type, rating and votes.
+            The year and imdb_id let Jellyseerr matching tell remakes apart.
     """
     try:
         titles = _fetch_titles(url, limit)
@@ -522,24 +523,41 @@ def scrape_imdb_top_movies(limit=MOVIE_LIMIT, url=IMDB_URL):
         print("❌ IMDb returned no titles")
         return []
 
-    movies = []
+    entries = []
     seen_titles = set()
     for entry in titles:
         norm_title = normalize_title(entry["title"])
         if not norm_title or norm_title in seen_titles:
             continue
         seen_titles.add(norm_title)
-        movies.append(entry["title"])
+        entries.append(entry)
         logger.debug(
             f"IMDb title: {entry['title']} ({entry['year']}) "
             f"[{entry['imdb_id']}, {entry['title_type']}, rating={entry['rating']}]"
         )
 
-    logger.info(f"Fetched {len(movies)} unique titles from IMDb: {movies}")
-    print(f"Fetched {len(movies)} unique titles from IMDb")
-    return movies
+    logger.info(
+        f"Fetched {len(entries)} unique titles from IMDb: "
+        f"{[e['title'] for e in entries]}"
+    )
+    print(f"Fetched {len(entries)} unique titles from IMDb")
+    return entries
+
+
+def scrape_imdb_top_movies(limit=MOVIE_LIMIT, url=IMDB_URL):
+    """
+    Fetch top movie titles from the configured IMDb list.
+
+    Args:
+        limit (int): Maximum number of movies to return
+        url (str): IMDb chart/list/search URL to read
+
+    Returns:
+        list: List of movie titles
+    """
+    return [entry["title"] for entry in fetch_imdb_titles(limit, url)]
 
 
 if __name__ == "__main__":
-    for index, name in enumerate(scrape_imdb_top_movies(), 1):
-        print(f"{index}. {name}")
+    for index, entry in enumerate(fetch_imdb_titles(), 1):
+        print(f"{index}. {entry['title']} ({entry['year']}) [{entry['imdb_id']}]")

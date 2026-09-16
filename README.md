@@ -61,9 +61,10 @@ If you're not using Unraid and want to set up Jelly Request using Docker Compose
    - Update the following environment variables:
      - `JELLYSEERR_URL`: Your Jellyseerr instance URL (e.g., `http://192.168.0.29:5054`).
      - `API_KEY`: Your Jellyseerr API key (from Jellyseerr settings).
-     - `MOVIE_LIMIT`: Number of movies to scrape (default: 50).
+     - `MOVIE_LIMIT`: Number of movies to fetch (default: 50).
      - `RUN_INTERVAL_DAYS`: How often to run (default: 7 days).
      - `DEBUG_MODE`: Set to `SIMPLE` or `VERBOSE` (default: `SIMPLE`).
+     - `DRY_RUN`: Set to `true` to see what would be requested without requesting it (default: `false`).
 
 3. **Run Docker Compose**:
    ```bash
@@ -128,6 +129,18 @@ Search URLs with no `title_type` default to feature films, since Jellyseerr requ
 
 ---
 
+## Checking Your Setup (Dry Run)
+
+Not sure your settings are right? Set `DRY_RUN=true` and the app does everything except create requests—it fetches the IMDb list, searches Jellyseerr, matches each title, and reports exactly what it *would* request:
+
+```bash
+docker run --rm -e JELLYSEERR_URL=http://192.168.0.29:5054 -e API_KEY=your-key-here -e MOVIE_LIMIT=10 -e DRY_RUN=true tophat17/jelly-request:latest
+```
+
+Your library is left untouched. Once the output looks right, set `DRY_RUN=false` (or drop it) and run normally.
+
+---
+
 ## If Something Goes Wrong
 
 Running into trouble? Here are the most common fixes:
@@ -135,6 +148,11 @@ Running into trouble? Here are the most common fixes:
 - **Movies aren’t showing up in Jellyseerr**:
   - Double-check your **Jellyseerr URL**. Make sure it’s exact (e.g., no trailing slashes like `/` at the end unless needed).
   - Verify your **API key**. Copy it fresh from Jellyseerr’s settings to rule out typos.
+  - Run with `DRY_RUN=true` (see above) to see exactly where each title stops.
+- **“You do not have permission to access this endpoint”**:
+  - Your `API_KEY` is wrong or has been rotated. Copy it again from Jellyseerr > **Settings** > **General**.
+- **The wrong movie got requested**:
+  - Fixed in 1.4.0—matching now uses the IMDb release year and ID, so remakes and titles that share a word (“Runner” vs “Blade Runner”) no longer collide. Update to the latest image.
 - **App won’t start**:
   - Ensure your Unraid server has internet access—Jelly Request needs to reach IMDb.
   - Check that Jellyseerr is running and accessible at the URL you provided.

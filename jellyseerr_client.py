@@ -3,12 +3,66 @@ Jellyseerr API client for Jelly Request application.
 Handles all interactions with the Jellyseerr API including search and requests.
 """
 
-import urllib.parse
 import json
 import time
 from datetime import datetime
 from config import JELLYSEERR_URL, API_KEY, IS_4K_REQUEST, DEBUG_MODE, logger
 from utils import normalize_title, create_session_with_retries, decode_html_entities
+
+# A candidate has to at least share its whole title with the IMDb entry to be
+# worth requesting. Tuned so an exact title alone passes, but a loose substring
+# hit whose year contradicts IMDb does not.
+_MIN_MATCH_SCORE = 20
+
+
+def _release_year(release_date):
+    """Pull the year out of a TMDB release date such as '1998-10-16'."""
+    if not release_date or not isinstance(release_date, str):
+        return None
+    head = release_date.split("-")[0]
+    return int(head) if head.isdigit() else None
+
+
+def _score_match(candidate, wanted_title, wanted_year, wanted_imdb_id, original_title=""):
+    """
+    Score how well a Jellyseerr search result matches the IMDb entry.
+
+    Args:
+        candidate (dict): Parsed search result
+        wanted_title (str): Title from IMDb
+        wanted_year (int): Release year from IMDb, if known
+        wanted_imdb_id (str): IMDb id from IMDb, if known
+        original_title (str): The result's untranslated title, if any
+
+    Returns:
+        int: Higher is a better match
+    """
+    score = 0
+    wanted_norm = normalize_title(wanted_title)
+    titles = {normalize_title(candidate["title"])}
+    if original_title:
+        titles.add(normalize_title(original_title))
+
+    # An IMDb id agreeing is conclusive; nothing else needs to line up.
+    if wanted_imdb_id and candidate.get("imdb_id") == wanted_imdb_id:
+        score += 100
+
+    if wanted_norm and wanted_norm in titles:
+        score += 50
+    elif wanted_norm and any(wanted_norm in t or t in wanted_norm for t in titles if t):
+        score += 20
+
+    # TMDB and IMDb often disagree by a year on festival or limited releases,
+    # so treat a near miss as neutral and only penalise a real mismatch.
+    if wanted_year and candidate.get("year"):
+        difference = abs(wanted_year - candidate["year"])
+        if difference == 0:
+            score += 25
+        elif difference > 1:
+            score -= 30
+
+    return score
+
 
 class JellyseerrClient:
     """Client for interacting with Jellyseerr API."""
@@ -33,18 +87,20 @@ class JellyseerrClient:
         Returns:
             dict or None: JSON response from Jellyseerr API
         """
-        encoded_query = urllib.parse.quote(movie_name, safe='')
-        logger.debug(f"Searching Jellyseerr for '{movie_name}' with encoded query: {encoded_query}")
+        # Hand the raw title to requests, which percent-encodes the query string
+        # itself. Encoding it here as well would send "Practical%2520Magic",
+        # and Jellyseerr would search for the literal text "Practical%20Magic".
+        logger.debug(f"Searching Jellyseerr for '{movie_name}'")
         start_time = datetime.now()
-        
+
         for attempt in range(1, max_retries + 1):
             try:
                 with create_session_with_retries() as session:
                     logger.debug(f"Attempt {attempt} for '{movie_name}': Sending request...")
                     res = session.get(
-                        f"{self.base_url}/api/v1/search", 
-                        params={"query": encoded_query}, 
-                        headers=self.headers, 
+                        f"{self.base_url}/api/v1/search",
+                        params={"query": movie_name},
+                        headers=self.headers,
                         timeout=(5, 15)
                     )
                     
@@ -78,49 +134,76 @@ class JellyseerrClient:
                 
         return None
     
-    def get_movie_details(self, movie_name, json_data):
+    def get_movie_details(self, movie, json_data):
         """
-        Extract movie details from Jellyseerr search response.
-        
+        Pick the best matching movie from a Jellyseerr search response.
+
         Args:
-            movie_name (str): Original movie name being searched
+            movie (str or dict): Title being searched, or an IMDb entry with
+                'title' and optionally 'year' and 'imdb_id'
             json_data (dict): JSON response from Jellyseerr search
-            
+
         Returns:
             tuple: (imdb_id, media_id, tmdb_id) or (None, None, None)
         """
+        if isinstance(movie, dict):
+            movie_name = movie.get("title", "")
+            wanted_year = movie.get("year")
+            wanted_imdb_id = movie.get("imdb_id")
+        else:
+            movie_name = movie
+            wanted_year = None
+            wanted_imdb_id = None
+
         if not json_data or "results" not in json_data:
             logger.error(f"No results in Jellyseerr response for '{movie_name}'")
             print(f"❌ No results in Jellyseerr response for '{movie_name}'")
             return None, None, None
-            
-        normalized_movie_name = normalize_title(movie_name)
-        
+
+        best = None
         for result in json_data["results"]:
-            if result.get("mediaType") == "movie":
-                title = result.get("title", "")
-                # Decode HTML entities like &amp; to &
-                title = decode_html_entities(title)
-                normalized_title = normalize_title(title)
-                imdb_id = result.get("mediaInfo", {}).get("imdbId") or result.get("imdbId")
-                media_id = result.get("id")
-                tmdb_id = result.get("tmdbId", media_id)
-                
-                if not media_id or not title:
-                    logger.warning(f"Skipping result for '{title}' (missing mediaId or title)")
-                    print(f"❌ Skipping '{title}' (missing mediaId or title)")
-                    continue
-                    
-                logger.debug(f"Found movie: {title} (tmdbId: {tmdb_id}, imdbId: {imdb_id}, mediaId: {media_id})")
-                
-                if normalized_movie_name in normalized_title:
-                    logger.info(f"Found movie: '{movie_name}' (imdbId: {imdb_id}, mediaId: {media_id}, tmdbId: {tmdb_id})")
-                    print(f"✅ Found movie: '{movie_name}' (imdbId: {imdb_id}, mediaId: {media_id}, tmdbId: {tmdb_id})")
-                    return imdb_id, media_id, tmdb_id
-                    
-        logger.warning(f"No matching movie found in Jellyseerr for '{movie_name}'")
-        print(f"❌ No matching movie found in Jellyseerr for '{movie_name}'")
-        return None, None, None
+            if result.get("mediaType") != "movie":
+                continue
+
+            title = decode_html_entities(result.get("title", ""))
+            media_id = result.get("id")
+            if not media_id or not title:
+                logger.debug(f"Skipping result for '{title}' (missing mediaId or title)")
+                continue
+
+            candidate = {
+                "title": title,
+                "imdb_id": result.get("mediaInfo", {}).get("imdbId") or result.get("imdbId"),
+                "media_id": media_id,
+                "tmdb_id": result.get("tmdbId", media_id),
+                "year": _release_year(result.get("releaseDate")),
+            }
+            candidate["score"] = _score_match(
+                candidate, movie_name, wanted_year, wanted_imdb_id,
+                decode_html_entities(result.get("originalTitle", "")),
+            )
+
+            logger.debug(
+                f"Candidate '{title}' ({candidate['year']}) "
+                f"tmdbId={candidate['tmdb_id']} score={candidate['score']}"
+            )
+            if best is None or candidate["score"] > best["score"]:
+                best = candidate
+
+        # Below this the result is a different film that merely shares a word,
+        # and requesting it would add the wrong movie to the library.
+        if not best or best["score"] < _MIN_MATCH_SCORE:
+            logger.warning(f"No confident match in Jellyseerr for '{movie_name}'")
+            print(f"❌ No matching movie found in Jellyseerr for '{movie_name}'")
+            return None, None, None
+
+        logger.info(
+            f"Matched '{movie_name}' to '{best['title']}' ({best['year']}) "
+            f"(imdbId: {best['imdb_id']}, mediaId: {best['media_id']}, "
+            f"tmdbId: {best['tmdb_id']}, score: {best['score']})"
+        )
+        print(f"✅ Found movie: '{best['title']}' ({best['year']}) (tmdbId: {best['tmdb_id']})")
+        return best["imdb_id"], best["media_id"], best["tmdb_id"]
     
     def make_request(self, tmdb_id, media_id):
         """
